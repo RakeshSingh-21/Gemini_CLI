@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - E-Shop{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; gap: 20px;">
+        <img src="{{ product.image_url or 'https://via.placeholder.com/300x200' }}" alt="{{ product.name }}" style="max-width: 300px; border-radius: 8px;">
+        <div>
+            <h1>{{ product.name }}</h1>
+            <p>{{ product.description }}</p>
+            <p><strong>Price:</strong> ₹{{ "%.2f"|format(product.price) }}</p>
+            <p><strong>Stock:</strong> {{ product.stock }}</p>
+            <p><strong>Average Rating:</strong> 
+                {% set total_rating = namespace(value=0) %}
+                {% for review in product.reviews %}{% set total_rating.value = total_rating.value + review.rating %}{% endfor %}
+                {% if product.reviews %}{{ (total_rating.value / product.reviews|length)|round(1) }} / 5 ({{ product.reviews|length }} reviews)
+                {% else %}No ratings yet{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <hr style="margin: 20px 0;">
+
+    <h3>Reviews</h3>
+    {% if product.reviews %}
+        {% for review in product.reviews %}
+            <div style="margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+                <p><strong>{{ review.user.username }}</strong> - {{ review.rating }}/5</p>
+                <p>{{ review.comment }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No reviews yet.</p>
+    {% endif %}
+
+    {% if user and user.role == 'customer' %}
+    <hr style="margin: 20px 0;">
+    <h3>Leave a Review</h3>
+    <form onsubmit="submitReview(event)">
+        <select id="rating" required style="padding: 5px; margin-bottom: 10px;">
+            <option value="5">5 Stars</option>
+            <option value="4">4 Stars</option>
+            <option value="3">3 Stars</option>
+            <option value="2">2 Stars</option>
+            <option value="1">1 Star</option>
+        </select>
+        <textarea id="comment" placeholder="Your comment" required style="display: block; width: 100%; margin-bottom: 10px;"></textarea>
+        <button type="submit" class="btn btn-primary">Submit Review</button>
+    </form>
+    {% endif %}
+</div>
+
+<script>
+async function submitReview(e) {
+    e.preventDefault();
+    const res = await fetch("/api/products/{{ product.id }}/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            rating: parseInt(document.getElementById("rating").value),
+            comment: document.getElementById("comment").value
+        })
+    });
+
+    if (res.ok) {
+        alert("Review submitted!");
+        location.reload();
+    } else {
+        alert("Error submitting review");
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Products - E-Shop{% endblock %}
+
+{% block content %}
+<h1>Available Products</h1>
+
+<!-- Search and Filter Form -->
+<div class="card search-filter-card" style="margin-bottom: 20px; padding: 20px;">
+    <form action="/" method="GET" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+        <div style="flex: 1; min-width: 200px;">
+            <label for="search_term" style="display: block; margin-bottom: 5px;">Search Name:</label>
+            <input type="text" name="search_term" id="search_term" value="{{ search_term or '' }}" placeholder="Search products..." style="width: 100%; padding: 8px;">
+        </div>
+
+        <div style="width: 100px;">
+            <label for="min_price" style="display: block; margin-bottom: 5px;">Min Price:</label>
+            <input type="number" name="min_price" id="min_price" value="{{ min_price or '' }}" step="0.01" style="width: 100%; padding: 8px;">
+        </div>
+
+        <div style="width: 100px;">
+            <label for="max_price" style="display: block; margin-bottom: 5px;">Max Price:</label>
+            <input type="number" name="max_price" id="max_price" value="{{ max_price or '' }}" step="0.01" style="width: 100%; padding: 8px;">
+        </div>
+
+        <div style="width: 150px;">
+            <label for="category_id" style="display: block; margin-bottom: 5px;">Category:</label>
+            <select name="category_id" id="category_id" style="width: 100%; padding: 8px;">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="width: 150px;">
+            <label for="brand_id" style="display: block; margin-bottom: 5px;">Brand:</label>
+            <select name="brand_id" id="brand_id" style="width: 100%; padding: 8px;">
+                <option value="">All Brands</option>
+                {% for brand in brands %}
+                <option value="{{ brand.id }}" {% if brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 5px; padding-bottom: 10px;">
+            <input type="checkbox" name="in_stock" id="in_stock" value="true" {% if in_stock %}checked{% endif %}>
+            <label for="in_stock">In Stock Only</label>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="/" class="btn" style="background-color: #6c757d; color: white;">Clear</a>
+        </div>
+    </form>
+</div>
+
+<div class="product-grid">
+    {% if products %}
+        {% for product in products %}
+        <div class="card product-card">
+            <img src="{{ product.image_url or 'https://via.placeholder.com/250x200' }}" alt="{{ product.name }}">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <p class="price">₹{{ "%.2f"|format(product.price) }}</p>
+            <p>Stock: {{ product.stock }}</p>
+            {% if user and user.role == 'customer' %}
+            <button class="btn btn-primary" onclick="addToCart({{ product.id }})">Add to Cart</button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No products found matching your criteria.</p>
+    {% endif %}
+</div>
+{% endblock %}

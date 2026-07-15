@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6">AI Assistant</h1>
+
+    {% if user %}
+    <div class="bg-white shadow-md rounded-lg p-6 max-w-2xl mx-auto">
+        <div id="chat-box" class="h-96 overflow-y-auto border border-gray-300 rounded-lg p-4 mb-4 bg-gray-50">
+            <!-- Chat messages will be loaded here -->
+            <div class="text-center text-gray-500">Type a message to start chatting!</div>
+        </div>
+        <form id="chat-form" onsubmit="sendMessage(event)" class="flex">
+            <input type="text" id="user-input" class="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ask about products, orders, or general support..." required>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Send</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="text-center py-8">
+        <p class="text-red-600 text-lg">Please log in to use the AI Assistant.</p>
+        <a href="/login" class="mt-4 inline-block px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">Login</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const chatForm = document.getElementById('chat-form');
+
+    function appendMessage(sender, message, isHtml = false) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('mb-2', sender === 'user' ? 'text-right' : 'text-left');
+        
+        const bubbleElement = document.createElement('span');
+        bubbleElement.classList.add(
+            'inline-block',
+            'px-4',
+            'py-2',
+            'rounded-lg',
+            sender === 'user' ? 'bg-blue-500': 'bg-gray-300',
+            sender === 'user' ? 'text-white': 'text-gray-800'
+        );
+        if (isHtml) {
+            bubbleElement.innerHTML = message;
+        } else {
+            bubbleElement.innerText = message;
+        }
+        
+        messageElement.appendChild(bubbleElement);
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage(event) {
+        event.preventDefault();
+        const query = userInput.value.trim();
+        if (!query) return;
+
+        appendMessage('user', query);
+        userInput.value = '';
+
+        const formData = new FormData();
+        formData.append('query', query);
+
+        try {
+            const response = await fetch('/api/agent/chat', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            let agentResponse = data.response;
+            if (data.intent === 'product_recommendation' && data.products && data.products.length > 0) {
+                agentResponse += '<br><ul>';
+                data.products.forEach(p => {
+                    agentResponse += `<li><a href="/product/${p.id}" class="text-blue-700 hover:underline">${p.name}</a> - ₹${p.price.toFixed(2)}</li>`;
+                });
+                agentResponse += '</ul>';
+                appendMessage('agent', agentResponse, true);
+            } else {
+                appendMessage('agent', agentResponse);
+            }
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            appendMessage('agent', 'Sorry, something went wrong. Please try again.');
+        }
+    }
+</script>
+{% endblock %}

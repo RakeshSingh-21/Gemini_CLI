@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Admin AI Assistant{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6">Admin AI Assistant</h1>
+
+    {% if user and user.role == "admin" %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Admin Chat for Analytics -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Analytics Chatbot</h2>
+            <div id="admin-chat-box" class="h-72 overflow-y-auto border border-gray-300 rounded-lg p-4 mb-4 bg-gray-50">
+                <div class="text-center text-gray-500">Ask about sales, users, products, etc.</div>
+            </div>
+            <form id="admin-chat-form" onsubmit="sendAdminMessage(event)" class="flex">
+                <input type="text" id="admin-user-input" class="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., total sales, low stock products..." required>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Send</button>
+            </form>
+        </div>
+
+        <!-- Product Description Generator -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Product Description Generator</h2>
+            <form id="description-form" onsubmit="generateDescription(event)">
+                <div class="mb-4">
+                    <label for="product-name" class="block text-gray-700 text-sm font-bold mb-2">Product Name:</label>
+                    <input type="text" id="product-name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label for="product-features" class="block text-gray-700 text-sm font-bold mb-2">Product Features (comma-separated):</label>
+                    <textarea id="product-features" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Generate Description</button>
+            </form>
+            <div class="mt-6 p-4 bg-gray-100 rounded-lg hidden" id="generated-description-box">
+                <h3 class="text-lg font-semibold mb-2">Generated Description:</h3>
+                <p id="generated-description" class="text-gray-800 whitespace-pre-wrap"></p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-8">
+        <p class="text-red-600 text-lg">Access Denied. You must be an administrator to view this page.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    const adminChatBox = document.getElementById('admin-chat-box');
+    const adminUserInput = document.getElementById('admin-user-input');
+    const adminChatForm = document.getElementById('admin-chat-form');
+
+    function appendAdminMessage(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('mb-2', sender === 'user' ? 'text-right' : 'text-left');
+        
+        const bubbleElement = document.createElement('span');
+        bubbleElement.classList.add(
+            'inline-block',
+            'px-4',
+            'py-2',
+            'rounded-lg',
+            sender === 'user' ? 'bg-blue-500': 'bg-gray-300',
+            sender === 'user' ? 'text-white': 'text-gray-800'
+        );
+        bubbleElement.innerText = message;
+        
+        messageElement.appendChild(bubbleElement);
+        adminChatBox.appendChild(messageElement);
+        adminChatBox.scrollTop = adminChatBox.scrollHeight;
+    }
+
+    async function sendAdminMessage(event) {
+        event.preventDefault();
+        const query = adminUserInput.value.trim();
+        if (!query) return;
+
+        appendAdminMessage('user', query);
+        adminUserInput.value = '';
+
+        const formData = new FormData();
+        formData.append('query', query);
+
+        try {
+            const response = await fetch('/api/agent/admin', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            appendAdminMessage('agent', data.response);
+        } catch (error) {
+            console.error('Error sending admin message:', error);
+            appendAdminMessage('agent', 'Sorry, something went wrong. Please try again.');
+        }
+    }
+
+    async function generateDescription(event) {
+        event.preventDefault();
+        const productName = document.getElementById('product-name').value.trim();
+        const productFeatures = document.getElementById('product-features').value.trim();
+
+        if (!productName || !productFeatures) {
+            alert("Please fill in both product name and features.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('product_name', productName);
+        formData.append('product_features', productFeatures);
+
+        try {
+            const response = await fetch('/api/agent/generate-description', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            document.getElementById('generated-description').innerText = data.description;
+            document.getElementById('generated-description-box').classList.remove('hidden');
+        } catch (error) {
+            console.error('Error generating description:', error);
+            alert('Error generating description. Please try again.');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}E-Shop{% endblock %}</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body>
+
+<nav>
+    <div class="nav-container">
+        <a href="/" class="logo">E-Shop</a>
+
+        <div class="nav-links">
+            {% if user %}
+                {% if user.role == 'admin' %}
+                    <a href="/">Products</a>
+                    <a href="/admin">Admin Dashboard</a>
+                    <a href="/admin-agent">Admin AI</a>
+                {% else %}
+                    <a href="/">Products</a>
+                    <a href="/cart">Cart</a>
+                    <a href="/orders">My Orders</a>
+                    <a href="/agent-chat">AI Assistant</a>
+                {% endif %}
+
+                <a href="#" onclick="logout()">Logout ({{ user.username }})</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+
+<footer>
+    <div class="container">
+        &copy; 2026 E-Shop. All rights reserved.
+    </div>
+</footer>
+
+<script>
+    async function logout() {
+        const response = await fetch('/api/logout', {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            window.location.href = '/login';
+        } else {
+            alert('Logout failed. Please try again.');
+        }
+    }
+</script>
+
+<script src="/static/js/script.js"></script>
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

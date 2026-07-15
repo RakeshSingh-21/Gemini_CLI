@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Product{% endblock %}
+
+{% block content %}
+<div class="card auth-form">
+    <h2>Edit Product</h2>
+
+    {% if product.image_url %}
+    <div style="margin-bottom: 15px;">
+        <p>Current Image:</p>
+        <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width: 200px; height: auto; border-radius: 8px;">
+    </div>
+    {% endif %}
+
+    <form onsubmit="updateProduct(event)" enctype="multipart/form-data">
+        <input type="text" id="name" value="{{ product.name }}" required>
+
+        <textarea id="description" required>{{ product.description }}</textarea>
+
+        <input type="number" step="0.01" id="price" value="{{ product.price }}" required>
+
+        <input type="number" id="stock" value="{{ product.stock }}" required>
+
+        <label for="image_file">Change Image:</label>
+        <input type="file" id="image_file" accept="image/*">
+
+        <input type="text" id="image_url" placeholder="OR New Image URL" value="{{ product.image_url if product.image_url and not product.image_url.startswith('/static/uploads/') else '' }}">
+
+        <label for="category_id">Category:</label>
+        <select id="category_id" required>
+            {% for category in categories %}
+                <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="brand_id">Brand:</label>
+        <select id="brand_id" required>
+            {% for brand in brands %}
+                <option value="{{ brand.id }}" {% if product.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-primary">Update Product</button>
+        <a href="/admin" class="btn">Cancel</a>
+    </form>
+</div>
+
+<script>
+async function updateProduct(event) {
+    event.preventDefault();
+
+    const formData = new FormData();
+    formData.append("name", document.getElementById("name").value);
+    formData.append("description", document.getElementById("description").value);
+    formData.append("price", document.getElementById("price").value);
+    formData.append("stock", document.getElementById("stock").value);
+    formData.append("category_id", document.getElementById("category_id").value);
+    formData.append("brand_id", document.getElementById("brand_id").value);
+    
+    const imageUrl = document.getElementById("image_url").value;
+    if (imageUrl) formData.append("image_url", imageUrl);
+    
+    const imageFile = document.getElementById("image_file").files[0];
+    if (imageFile) formData.append("image_file", imageFile);
+
+    const res = await fetch("/api/products/{{ product.id }}", {
+        method: "PUT",
+        body: formData
+    });
+
+    if (res.ok) {
+        alert("Product updated successfully!");
+        window.location.href = "/admin";
+    } else {
+        const err = await res.json();
+        alert(err.detail || "Error updating product");
+    }
+}
+</script>
+{% endblock %}

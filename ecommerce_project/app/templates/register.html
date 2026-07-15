@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Register - E-Shop{% endblock %}
+
+{% block content %}
+<div class="card auth-form">
+    <h2>Register</h2>
+    <form onsubmit="register(event)">
+        <label>Username</label>
+        <input type="text" name="username" required>
+        <label>Email</label>
+        <input type="email" name="email" required>
+        <label>Password</label>
+        <input type="password" name="password" maxlength="72" required>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+    </form>
+    <p style="margin-top: 1rem; text-align: center;">
+        Already have an account? <a href="/login">Login</a>
+    </p>
+</div>
+{% endblock %}
